@@ -1,0 +1,31 @@
+[
+  { "key": "1-1-1", "corner": "Олива", "slogan": "Греческая свежесть — финальный аккорд лета", "image": "/assets/iliva.jpg", "color": "#FFDD00" },
+  { "key": "1-1-2", "corner": "33 Пингвина", "slogan": "Холодные десерты и уют", "image": "/assets/pingvin.jpg", "color": "#FFDD00" },
+  { "key": "1-1-3", "corner": "Лакрица", "slogan": "Нестандартные вкусы и характер", "image": "/assets/lacrica.jpg", "color": "#414141" },
+  { "key": "1-2-1", "corner": "Караван", "slogan": "Пряные нотки и тепло", "image": "/assets/karavan.jpg", "color": "#414141" },
+  { "key": "1-2-2", "corner": "Бебо", "slogan": "Сочные роллы и настроение", "image": "/assets/bebo.jpg", "color": "#FFDD00" },
+  { "key": "1-2-3", "corner": "SWEET°", "slogan": "Десерты для приятных пауз", "image": "https://picsum.photos/seed/sweet1/1080/1920", "color": "#FFDD00" },
+  { "key": "1-3-1", "corner": "Chu", "slogan": "Лёгкие и хрустящие варианты", "image": "/assets/chu.jpg", "color": "#FFDD00" },
+  { "key": "1-3-2", "corner": "Green Bowl", "slogan": "Лёгкие миски", "image": "https://picsum.photos/seed/green1/1080/1920", "color": "#FFDD00" },
+  { "key": "1-3-3", "corner": "Карамельный Дом", "slogan": "Сладкие паузы", "image": "https://picsum.photos/seed/caramel1/1080/1920", "color": "#FFDD00" },
+
+  { "key": "2-1-1", "corner": "Дружба Крепкая", "slogan": "Тёплые первые блюда", "image": "/assets/dk.jpg", "color": "#FFDD00" },
+  { "key": "2-1-2", "corner": "Gusto Vivo", "slogan": "Итальянский ритм", "image": "/assets/gv.jpg", "color": "#FFDD00" },
+  { "key": "2-1-3", "corner": "Кофе и Кекс", "slogan": "Классика кофейных пауз", "image": "https://picsum.photos/seed/coffee1/1080/1920", "color": "#414141" },
+  { "key": "2-2-1", "corner": "Караван", "slogan": "Ароматы востока", "image": "/assets/karavan.jpg", "color": "#414141" },
+  { "key": "2-2-2", "corner": "La Pause", "slogan": "Тихий уголок", "image": "https://picsum.photos/seed/lapause1/1080/1920", "color": "#414141" },
+  { "key": "2-2-3", "corner": "SWEET°", "slogan": "Десертный уют", "image": "https://picsum.photos/seed/sweet2/1080/1920", "color": "#FFDD00" },
+  { "key": "2-3-1", "corner": "Street Bites", "slogan": "Для компании", "image": "https://picsum.photos/seed/street2/1080/1920", "color": "#FFDD00" },
+  { "key": "2-3-2", "corner": "Green Bowl", "slogan": "Разделите миску", "image": "https://picsum.photos/seed/green2/1080/1920", "color": "#FFDD00" },
+  { "key": "2-3-3", "corner": "33 Пингвина", "slogan": "Холодные лакомства", "image": "/assets/pingvin.jpg", "color": "#FFDD00" },
+
+  { "key": "3-1-1", "corner": "Олива", "slogan": "Домашние нотки", "image": "/assets/iliva.jpg", "color": "#FFDD00" },
+  { "key": "3-1-2", "corner": "Gusto Vivo", "slogan": "Паста и характер", "image": "/assets/gv.jpg", "color": "#FFDD00" },
+  { "key": "3-1-3", "corner": "SWEET°", "slogan": "Нежные вкусы", "image": "https://picsum.photos/seed/sweet3/1080/1920", "color": "#FFDD00" },
+  { "key": "3-2-1", "corner": "Караван", "slogan": "Плов и пряности", "image": "/assets/karavan.jpg", "color": "#414141" },
+  { "key": "3-2-2", "corner": "La Pause", "slogan": "Неспешный ритм", "image": "https://picsum.photos/seed/lapause2/1080/1920", "color": "#414141" },
+  { "key": "3-2-3", "corner": "Лакрица", "slogan": "Смелые вкусы", "image": "/assets/lacrica.jpg", "color": "#FFDD00" },
+  { "key": "3-3-1", "corner": "Street Bites", "slogan": "Динамично и вкусно", "image": "https://picsum.photos/seed/street3/1080/1920", "color": "#FFDD00" },
+  { "key": "3-3-2", "corner": "Варение", "slogan": "Тонкие сладкие ноты", "image": "/assets/varenie.jpg", "color": "#FFDD00" },
+  { "key": "3-3-3", "corner": "PokeLoves", "slogan": "Свежие поке и смелые соусы", "image": "/assets/pokeloves.jpg", "color": "#414141" }
+]
