@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Результат — Terminal F</title>
+
+  <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.cdnfonts.com/css/muller" as="style" onload="this.rel='stylesheet'">
+  <noscript><link href="https://fonts.cdnfonts.com/css/muller" rel="stylesheet"></noscript>
+
+  <meta name="theme-color" content="#FFFFFF">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-result">
+  <div class="app-bg"></div>
+
+  <main class="wrap">
+    <header class="top">
+      <img src="/assets/logo.png" alt="Terminal F logo" class="brand" onerror="this.onerror=null;this.src='/assets/logo.svg'">
+      <div class="brand-texts">
+        <h1 class="main-title">Твой корнер</h1>
+        <p class="lead">Скачай карточку или пройди заново.</p>
+      </div>
+    </header>
+
+    <section class="card shell result-shell">
+      <div id="resultArea" class="result-area">
+        <!-- Карточка 9:16 будет здесь -->
+      </div>
+
+      <div class="result-actions">
+        <button id="downloadBtn" class="btn primary">Скачать</button>
+        <button id="againBtn" class="btn ghost">Пройти снова</button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <small>© Terminal F — Food Hall</small>
+    </footer>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNa5sO4e+ua0h2rJjOa+qkE0YjDkV0bQk1y2Q5qVwVbQ5D6df9ax9wK5b1+0bC2pna4i7c1g2qQq6Z6k6R0w5g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
