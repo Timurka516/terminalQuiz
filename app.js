@@ -1,10 +1,10 @@
-// app.js — исправленная версия: разделение логики index/result, защита от null DOM, стабильный рендер результата
+// app.js — обновлённая логика поиска по всем спискам и поддержка локальных изображений
 (() => {
   const LISTS = ['/data/list1.json','/data/list2.json','/data/list3.json'];
   const DEFAULT_CORNER = {
     corner: "Terminal F — Рекомендация",
     slogan: "Универсальный выбор для любого настроения",
-    image: "https://picsum.photos/seed/default/1080/1920",
+    image: "/assets/default.png",
     color: "#414141"
   };
 
@@ -43,16 +43,76 @@
     }
   ];
 
-  // Определяем страницу
+  // Simple cache for prefetched lists
+  const listsCache = { loaded: false, data: [] };
+
+  // Try prefetch lists into sessionStorage (non-blocking)
+  (function prefetch(){
+    try {
+      const fromSession = sessionStorage.getItem('listsCache_v2');
+      if (fromSession) {
+        const parsed = JSON.parse(fromSession);
+        if (Array.isArray(parsed) && parsed.length === LISTS.length) {
+          listsCache.loaded = true;
+          listsCache.data = parsed;
+          console.log('[prefetch] loaded lists from sessionStorage');
+          return;
+        }
+      }
+    } catch(e){ /* ignore */ }
+
+    Promise.all(LISTS.map(u => fetch(u).then(r => r.ok ? r.json() : []).catch(()=>[])))
+      .then(arr => {
+        listsCache.loaded = true;
+        listsCache.data = arr;
+        try { sessionStorage.setItem('listsCache_v2', JSON.stringify(arr)); } catch(e){}
+        console.log('[prefetch] lists fetched and cached');
+      })
+      .catch(err => console.warn('[prefetch] failed', err));
+  })();
+
+  // Helpers
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const isQuiz = document.body.classList.contains('page-quiz');
   const isResult = document.body.classList.contains('page-result');
 
   if (isQuiz) initQuizPage();
   if (isResult) initResultPage();
 
+  // Find a key across all lists (returns {item, listUrl} or null)
+  async function findKeyInAllLists(key) {
+    // Check cache first
+    if (listsCache.loaded && listsCache.data.length === LISTS.length) {
+      for (let i=0;i<LISTS.length;i++){
+        const arr = listsCache.data[i] || [];
+        const found = Array.isArray(arr) ? arr.find(x => x.key === key) : null;
+        if (found) return { item: found, listUrl: LISTS[i] };
+      }
+    }
+
+    // Otherwise fetch each list (sequentially to save bandwidth) and search
+    for (let i=0;i<LISTS.length;i++){
+      try {
+        const resp = await fetch(LISTS[i]);
+        if (!resp.ok) continue;
+        const arr = await resp.json();
+        // update cache entry
+        listsCache.data[i] = arr;
+        const found = Array.isArray(arr) ? arr.find(x => x.key === key) : null;
+        if (found) {
+          // persist cache
+          try { sessionStorage.setItem('listsCache_v2', JSON.stringify(listsCache.data)); } catch(e){}
+          return { item: found, listUrl: LISTS[i] };
+        }
+      } catch (e) {
+        console.warn('[findKey] fetch error for', LISTS[i], e);
+      }
+    }
+    return null;
+  }
+
   // ---------------- Quiz page ----------------
   function initQuizPage(){
-    // Получаем элементы — делаем это локально в функции, чтобы не обращаться к несуществующим узлам на result.html
     const screenStart = document.getElementById('screenStart');
     const screenQuiz = document.getElementById('screenQuiz');
     const screenLoading = document.getElementById('screenLoading');
@@ -64,7 +124,7 @@
     const progressBar = document.getElementById('progressBar');
 
     if (!btnStart || !questionHolder || !btnNext || !btnBack || !progressBar || !progressStep) {
-      console.error('[quiz] Required DOM nodes not found — aborting quiz init');
+      console.error('[quiz] required DOM not found, aborting initQuizPage');
       return;
     }
 
@@ -73,13 +133,10 @@
     let answers = [null,null,null,null];
     let current = 0;
 
-    // Start
     btnStart.addEventListener('click', async () => {
-      // choose random list
+      // pick random list
       const idx = Math.floor(Math.random()*LISTS.length);
       chosenListUrl = LISTS[idx];
-
-      // UI swap
       if (screenStart) screenStart.classList.remove('show');
       if (screenLoading) screenLoading.classList.add('show');
 
@@ -87,15 +144,14 @@
         const resp = await fetch(chosenListUrl);
         if (!resp.ok) throw new Error('fetch failed ' + resp.status);
         chosenListData = await resp.json();
-        console.log('[quiz] Selected list:', chosenListUrl, 'items:', Array.isArray(chosenListData) ? chosenListData.length : 0);
+        console.log('[quiz] chosen list loaded:', chosenListUrl, 'items:', Array.isArray(chosenListData) ? chosenListData.length : 0);
       } catch (err) {
-        console.warn('[quiz] Error fetching list, continuing with empty data', err);
+        console.warn('[quiz] failed to load chosen list', chosenListUrl, err);
         chosenListData = [];
       } finally {
         if (screenLoading) screenLoading.classList.remove('show');
       }
 
-      // show quiz
       if (screenQuiz) screenQuiz.classList.add('show');
       renderQuestion(0);
     });
@@ -103,7 +159,6 @@
     function renderQuestion(i){
       current = i;
       progressStep.textContent = String(i+1);
-      // progress: fraction of completed steps (0..100)
       const pct = Math.round(((i) / (QUESTIONS.length - 1)) * 100);
       progressBar.style.width = pct + '%';
 
@@ -170,8 +225,6 @@
       });
 
       panel.appendChild(opts);
-
-      // replace content with animation-friendly swap
       questionHolder.innerHTML = '';
       questionHolder.appendChild(panel);
 
@@ -194,16 +247,32 @@
         return;
       }
 
-      // submit
+      // final submit
       if (screenQuiz) screenQuiz.classList.remove('show');
       if (screenLoading) screenLoading.classList.add('show');
 
-      // small UX delay
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 260)); // UX pause
 
       const key = `${answers[0]}-${answers[1]}-${answers[2]}`;
-      const found = Array.isArray(chosenListData) ? chosenListData.find(x => x.key === key) : null;
-      const corner = found || DEFAULT_CORNER;
+      let found = Array.isArray(chosenListData) ? chosenListData.find(x => x.key === key) : null;
+      let foundIn = chosenListUrl;
+
+      // if not found in chosen list, search across all lists
+      if (!found) {
+        console.log('[quiz] key not found in chosen list, searching all lists for key=', key);
+        try {
+          const res = await findKeyInAllLists(key);
+          if (res) {
+            found = res.item;
+            foundIn = res.listUrl;
+            console.log('[quiz] found key in another list:', foundIn);
+          }
+        } catch (e) {
+          console.warn('[quiz] error searching all lists', e);
+        }
+      }
+
+      const result = found || DEFAULT_CORNER;
 
       let tail = '';
       const q4 = answers[3];
@@ -213,38 +282,32 @@
 
       const payload = {
         answers,
-        chosenList: chosenListUrl,
+        chosenList: foundIn || chosenListUrl,
         key,
-        result: corner,
-        sloganWithTail: (corner.slogan || '') + (found ? tail : '')
+        result,
+        sloganWithTail: (result.slogan || '') + (found ? tail : '')
       };
 
       console.log('[quiz] Answers:', answers);
-      console.log('[quiz] Selected list:', chosenListUrl);
+      console.log('[quiz] Final chosen list (where match found):', payload.chosenList);
       console.log('[quiz] Lookup key:', key);
-      console.log('[quiz] Corner chosen:', corner.corner || corner);
+      console.log('[quiz] Corner chosen:', result.corner);
 
-      try {
-        sessionStorage.setItem('quizResult', JSON.stringify(payload));
-      } catch (e) {
-        console.warn('[quiz] sessionStorage set error', e);
-      }
+      try { sessionStorage.setItem('quizResult', JSON.stringify(payload)); } catch(e){ console.warn('[quiz] sessionStorage write failed', e); }
 
-      // navigate
       window.location.href = 'result.html';
     });
   }
 
   // ---------------- Result page ----------------
   function initResultPage(){
-    // Wait until DOM loaded to be safe
     if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
       document.addEventListener('DOMContentLoaded', renderResult);
     } else {
       renderResult();
     }
 
-    function renderResult(){
+    async function renderResult(){
       const resultArea = document.getElementById('resultArea');
       const btnDownload = document.getElementById('downloadBtn');
       const btnAgain = document.getElementById('againBtn');
@@ -255,11 +318,9 @@
       }
 
       let raw = null;
-      try { raw = sessionStorage.getItem('quizResult'); } catch(e) { console.warn('[result] sessionStorage read failed', e); }
+      try { raw = sessionStorage.getItem('quizResult'); } catch(e){ console.warn('[result] sessionStorage read failed', e); }
 
       if (!raw) {
-        console.warn('[result] No quizResult in sessionStorage, redirecting to index');
-        // friendly message instead of immediate crash/redirect
         resultArea.innerHTML = '<div style="padding:20px;color:#414141">Результат не найден. <button id="goBackBtn" class="btn primary">Вернуться к квизу</button></div>';
         const goBack = document.getElementById('goBackBtn');
         if (goBack) goBack.addEventListener('click', () => window.location.href = 'index.html');
@@ -267,24 +328,36 @@
       }
 
       let payload;
-      try { payload = JSON.parse(raw); } catch(e) {
-        console.error('[result] parse error', e);
-        window.location.href = 'index.html';
-        return;
+      try { payload = JSON.parse(raw); } catch(e) { console.error('[result] parse error', e); window.location.href='index.html'; return; }
+
+      let res = payload.result || DEFAULT_CORNER;
+      let sloganWithTail = payload.sloganWithTail || res.slogan || '';
+
+      // If result is default (no match), try to find key in all lists now (extra attempt)
+      if (res === DEFAULT_CORNER || !res.corner || res.corner === DEFAULT_CORNER.corner) {
+        try {
+          const search = await findKeyInAllLists(payload.key);
+          if (search && search.item) {
+            res = search.item;
+            sloganWithTail = (res.slogan || '') + (payload.sloganWithTail && payload.sloganWithTail.includes('—') ? '' : ( (payload.answers && payload.answers[3]) ? (payload.answers[3]===1?' — загляни днём':payload.answers[3]===2?' — идеально на вечер':' — сохрани для выходных') : '') );
+            console.log('[result] found key at render-time in', search.listUrl);
+          } else {
+            console.log('[result] no match found in any list for key', payload.key);
+          }
+        } catch(e) {
+          console.warn('[result] error searching lists at render-time', e);
+        }
       }
 
-      const res = payload.result || DEFAULT_CORNER;
-      const sloganWithTail = payload.sloganWithTail || res.slogan || '';
-
-      // build card
+      // Build card
       resultArea.innerHTML = '';
       const card = document.createElement('div');
       card.className = 'result-card';
-      card.style.background = res.color || DEFAULT_CORNER.color;
+      card.style.background = (res.color || DEFAULT_CORNER.color);
 
       const cover = document.createElement('div');
       cover.className = 'result-cover';
-      // safe image
+      // use provided image path if present (support absolute or relative)
       cover.style.backgroundImage = `url('${res.image || DEFAULT_CORNER.image}')`;
       card.appendChild(cover);
 
@@ -313,10 +386,8 @@
       card.appendChild(content);
       resultArea.appendChild(card);
 
-      // animate in
       requestAnimationFrame(()=> card.classList.add('show'));
 
-      // download
       if (btnDownload) {
         btnDownload.addEventListener('click', async () => {
           btnDownload.disabled = true;
@@ -353,10 +424,10 @@
       console.log('[result] Lookup key:', payload.key);
       console.log('[result] Answers:', payload.answers);
       console.log('[result] Corner:', res.corner);
-    } // end renderResult
+    }
   }
 
-  // small helper to escape text to avoid accidental HTML injection in texts
+  // small helper to escape HTML
   function escapeHtml(s){
     if (typeof s !== 'string') return s;
     return s.replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
